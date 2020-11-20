@@ -26,7 +26,7 @@ public class Player_Movement : MonoBehaviour
 	public int side = 1;
 	[Space]
 	[Header("Booleans")]
-	public bool canMove, sword, jump, doublejump, jumpPress, isFlip, falling, wallGrab, wallJumped, wallSlide, isDashing;
+	public bool canMove, sword, jump, doublejump, jumpPress, isFlip, falling, wallGrab, wallJumped, wallSlide, isDashing,isPause;
 	private bool groundTouch;
 	private bool hasDashed;
 	[Space]
@@ -129,168 +129,176 @@ public class Player_Movement : MonoBehaviour
 		};
 		input.Player.Jump.performed += ctx => jump = true;
 		input.Player.Jump.canceled += ctx => jump = false;
-		input.Player.Inventory.performed += x => { inventory.GetComponent<Inventory>().OpenCloseInventory(); canMove = !canMove;};
+		input.Player.Inventory.performed += x => { inventory.GetComponent<Inventory>().OpenCloseInventory(); };
+		
         #endregion
     }
 
-    void FixedUpdate()
+	void FixedUpdate()
 	{
-		tm.SetText(PlayerHealth.currentHealth.ToString());
-	    
-
-		if (falling && !doublejump)
+		if (!isPause)
 		{
-			//rb.velocity = Vector2.zero;
-			rb.gravityScale = 6;
-			//	rb.velocity = Vector2.zero;
-			//			Walk(dir);
-			if (jump && !coll.onGround && !coll.onWall )
+			Vector2 dir = new Vector2(x, y);
+
+			Walk(dir);
+			tm.SetText(PlayerHealth.currentHealth.ToString());
+
+
+			if (falling && !doublejump)
 			{
-				Jump(Vector2.up, false);
-				doublejump = true;
+				//rb.velocity = Vector2.zero;
+				rb.gravityScale = 6;
+				//	rb.velocity = Vector2.zero;
+				//			Walk(dir);
+				if (jump && !coll.onGround && !coll.onWall)
+				{
+					Jump(Vector2.up, false);
+					doublejump = true;
+				}
+
+				//Jump(Vector2.down, false);
+			}
+			else rb.gravityScale = 5;
+
+
+			if (sword)
+			{
+				anim.SetLayerWeight(0, 0);
+				anim.SetLayerWeight(1, 1);
 			}
 
-			//Jump(Vector2.down, false);
-		}
-		else rb.gravityScale = 5;
-
-
-		if (sword)
-		{
-			anim.SetLayerWeight(0, 0);
-			anim.SetLayerWeight(1, 1);
-		}
-
-		else
-		{
-			anim.SetLayerWeight(0, 1);
-			anim.SetLayerWeight(1, 0);
+			else
+			{
+				anim.SetLayerWeight(0, 1);
+				anim.SetLayerWeight(1, 0);
+			}
 		}
 	}
-
 
 
 	// Update is called once per frame
 	void Update()
 	{
-		anim.SetFloat("Horizontal", x);
-		if (x == 0) anim.SetInteger("Horizontal2", 0);
-		else anim.SetInteger("Horizontal2", 1);
-		anim.SetBool("onGround", coll.onGround);
-		anim.SetBool("onWall", coll.onWall);		
-		anim.SetBool("jump",jump);
-		anim.SetBool("falling", falling);
-		
-		
-		Vector2 dir = new Vector2(x, y);
-
-		Walk(dir);
-		if (coll.onGround || coll.onWall ) falling = false;
-		else if (!coll.onGround && !jump) falling = true;
-		//else if (!jump) falling = true;
-
-		if (rb.velocity.y < 0)
-		{
-			rb.velocity += Vector2.up * Physics2D.gravity.y * (fallMultiplier - 1) * Time.deltaTime;
-		}
-
-
-		if (wallGrab && !isDashing)
-		{
-			rb.gravityScale = 0;
-			if (x > .2f || x < -.2f)
-				rb.velocity = new Vector2(rb.velocity.x, 0);
-
-			float speedModifier = y > 0 ? .5f : 1;
-
-			rb.velocity = new Vector2(rb.velocity.x, y * (speed * speedModifier));
-		}
-		
-
-		if (coll.onWall && !coll.onGround)
-		{
-			if (x != 0 && !wallGrab)
-			{
-				wallJumped = false;
-				wallSlide = true;
-				WallSlide();
-			}
-		}
-
-		if (!coll.onWall || coll.onGround)
-			wallSlide = false;
-
-		if (jump)
+		if (isPause) Time.timeScale = 0;
+		else Time.timeScale = 1;
+		if (!isPause)
 		{
 			
+			anim.SetFloat("Horizontal", x);
+			if (x == 0) anim.SetInteger("Horizontal2", 0); 
+			else anim.SetInteger("Horizontal2", 1);
+			anim.SetBool("onGround", coll.onGround);
+			anim.SetBool("onWall", coll.onWall);
+			anim.SetBool("jump", jump);
+			anim.SetBool("falling", falling);
 
-			rb.gravityScale = 10f;
-			if (coll.onGround && !jumpPress )
-				Jump(Vector2.up, false);
 
-			if (coll.onWall && !coll.onGround && !jumpPress)
+			if (coll.onGround || coll.onWall) falling = false;
+			else if (!coll.onGround && !jump) falling = true;
+			//else if (!jump) falling = true;
+
+			if (rb.velocity.y < 0)
 			{
-				WallJump();
-
+				rb.velocity += Vector2.up * Physics2D.gravity.y * (fallMultiplier - 1) * Time.deltaTime;
 			}
-			jumpPress = true;
-		}
 
-		if (!jump)
-		{
-			rb.gravityScale = 15f;
-			jumpPress = false;
-		}
 
-		
-
-		if (coll.onGround && !groundTouch)
-		{
-			GroundTouch();
-			groundTouch = true;
-		}
-
-		if (!coll.onGround && groundTouch)
-		{
-			groundTouch = false;
-		}
-
-		WallParticle(y);
-
-		if (wallGrab || wallSlide || !canMove)
-			return;
-
-		if (side == -1 && coll.onRightWall)
-		{
-			side = 1;
-			Flip();
-		}
-
-		if (side == 1 && coll.onLeftWall)
-		{
-			side = -1;
-			Flip();
-		}
-
-		if (!coll.onWall)
-		{
-
-			if (x > 0 && side == -1 )
+			if (wallGrab && !isDashing)
 			{
-			side = 1;
-			Flip();
+				rb.gravityScale = 0;
+				if (x > .2f || x < -.2f)
+					rb.velocity = new Vector2(rb.velocity.x, 0);
+
+				float speedModifier = y > 0 ? .5f : 1;
+
+				rb.velocity = new Vector2(rb.velocity.x, y * (speed * speedModifier));
 			}
-			if (x < 0 && side == 1)
+
+
+			if (coll.onWall && !coll.onGround)
+			{
+				if (x != 0 && !wallGrab)
+				{
+					wallJumped = false;
+					wallSlide = true;
+					WallSlide();
+				}
+			}
+
+			if (!coll.onWall || coll.onGround) wallSlide = false;
+
+			if (jump)
+			{
+
+
+				rb.gravityScale = 10f;
+				if (coll.onGround && !jumpPress)
+					Jump(Vector2.up, false);
+
+				if (coll.onWall && !coll.onGround && !jumpPress)
+				{
+					WallJump();
+
+				}
+				jumpPress = true;
+			}
+
+			if (!jump)
+			{
+				rb.gravityScale = 15f;
+				jumpPress = false;
+			}
+
+
+
+			if (coll.onGround && !groundTouch)
+			{
+				GroundTouch();
+				groundTouch = true;
+			}
+
+			if (!coll.onGround && groundTouch)
+			{
+				groundTouch = false;
+			}
+
+			WallParticle(y);
+
+			if (wallGrab || wallSlide || !canMove)
+				return;
+
+			if (side == -1 && coll.onRightWall)
+			{
+				side = 1;
+				Flip();
+			}
+
+			if (side == 1 && coll.onLeftWall)
 			{
 				side = -1;
 				Flip();
 			}
-		}
 
-		if (coll.onWall || coll.onGround)
-		{
-			
-			doublejump = false;
+			if (!coll.onWall)
+			{
+
+				if (x > 0 && side == -1)
+				{
+					side = 1;
+					Flip();
+				}
+				if (x < 0 && side == 1)
+				{
+					side = -1;
+					Flip();
+				}
+			}
+
+			if (coll.onWall || coll.onGround)
+			{
+
+				doublejump = false;
+			}
 		}
 	}
 
@@ -413,6 +421,11 @@ public class Player_Movement : MonoBehaviour
 	{
 		sword = !sword;
 	}
+
+	public void SetPause() => isPause= !isPause;
+	
+
+	
 
 	public void Flip()
     {

@@ -19,12 +19,17 @@ public class ArmadilloBounce : StateMachineBehaviour
         tr = animator.gameObject.transform;
         rb = animator.gameObject.GetComponent<Rigidbody2D>();
 		coll = animator.gameObject.GetComponent<EnemyCollision>();
+        groundedCount = 0;
+		animator.SetInteger("GroundedCount", groundedCount);
 	}
 
     override public void OnStateUpdate(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
+		
+		
 		if (coll.onGround)
         {
+			animator.SetInteger("GroundedCount", groundedCount);
             groundedCount += 1;  
 			if(groundedCount == 1)
 			{
@@ -38,14 +43,12 @@ public class ArmadilloBounce : StateMachineBehaviour
 				}
 				vel = new Vector2(x, 25);
 			}
-			animator.SetInteger("GroundedCount", groundedCount);
+			
             rb.velocity = vel;
         }
     }
     override public void OnStateExit(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
         rb.velocity = Vector2.zero;
-        groundedCount = 0;
-		animator.SetInteger("GroundedCount", groundedCount);
 	}
 }

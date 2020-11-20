@@ -16,6 +16,7 @@ public class EnemyCollision : MonoBehaviour
 	public bool onLeftWall;
 	public int wallSide;
 	bool flip;
+	public float d;
 	public Transform tr;
 	public GameObject p1;
 	public Rigidbody2D rb;
@@ -32,6 +33,7 @@ public class EnemyCollision : MonoBehaviour
 	void Start()
 	{
 		p1 = GameObject.FindGameObjectWithTag("Player");
+		
 		tr = gameObject.transform;
 		rb = gameObject.GetComponent<Rigidbody2D>();
 		
@@ -40,6 +42,11 @@ public class EnemyCollision : MonoBehaviour
 	// Update is called once per frame
 	void Update()
 	{
+		Transform pT;
+		pT = p1.GetComponent<Transform>();
+
+		d = Vector2.Distance(pT.position, transform.position);
+
 		onGround = Physics2D.OverlapCircle((Vector2)transform.position + bottomOffset, collisionRadius, groundLayer);
 		onWall = Physics2D.OverlapCircle((Vector2)transform.position + rightOffset, collisionRadius, groundLayer)
 			|| Physics2D.OverlapCircle((Vector2)transform.position + leftOffset, collisionRadius, groundLayer);
@@ -66,10 +73,12 @@ public class EnemyCollision : MonoBehaviour
 		Gizmos.color = Color.red;
 
 		var positions = new Vector2[] { bottomOffset, rightOffset, leftOffset };
-
+		
 		Gizmos.DrawWireSphere((Vector2)transform.position + bottomOffset, collisionRadius);
 		Gizmos.DrawWireSphere((Vector2)transform.position + rightOffset, collisionRadius);
 		Gizmos.DrawWireSphere((Vector2)transform.position + leftOffset, collisionRadius);
+
+		
 	}
 
 	
