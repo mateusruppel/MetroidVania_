@@ -15,7 +15,6 @@ public abstract class Damageable : MonoBehaviour
     public UnityEvent OnDamage;
     public UnityEvent FinishDamage;
     public UnityEvent OnDeath;
-
     private SpriteRenderer spriteRenderer;
 
     protected void Start()

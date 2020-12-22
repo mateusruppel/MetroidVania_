@@ -18,32 +18,28 @@ MonoBehaviour:
   m_TransparencySortAxis: {x: 0, y: 1, z: 0}
   m_HDREmulationScale: 1
   m_LightBlendStyles:
-  - enabled: 1
-    name: Default
+  - name: Default
     maskTextureChannel: 0
-    renderTextureScale: 0.5
-    blendMode: 1
+    renderTextureScale: 1
+    blendMode: 0
     customBlendFactors:
       multiplicative: 0
       additive: 0
-  - enabled: 1
-    name: Direct Lighting
+  - name: Direct Lighting
     maskTextureChannel: 1
     renderTextureScale: 0.5
     blendMode: 1
     customBlendFactors:
       multiplicative: 0
       additive: 0
-  - enabled: 0
-    name: Blend Style 2
+  - name: Blend Style 2
     maskTextureChannel: 0
     renderTextureScale: 1
     blendMode: 1
     customBlendFactors:
       multiplicative: 0
       additive: 0
-  - enabled: 0
-    name: Blend Style 3
+  - name: Blend Style 3
     maskTextureChannel: 0
     renderTextureScale: 1
     blendMode: 1

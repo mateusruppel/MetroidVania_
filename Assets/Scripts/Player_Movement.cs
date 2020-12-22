@@ -11,6 +11,7 @@ public class Player_Movement : MonoBehaviour
 {
 	#region variables
 
+	AnimationSetter animSet;
 	public List<GameObject> playerItens;
 	public ItemInterface item;
 	private Collision coll;	
@@ -22,11 +23,12 @@ public class Player_Movement : MonoBehaviour
 	float a = 1f, b = 3;
 	public float fallMultiplier = 2.5f;
 	public float lowJumpMultiplier = 2f;
-	float x, y;
+	public float x, y;
 	public int side = 1;
+	Vector2 dir;
 	[Space]
 	[Header("Booleans")]
-	public bool canMove, sword, jump, doublejump, jumpPress, isFlip, falling, wallGrab, wallJumped, wallSlide, isDashing,isPause;
+	public bool canMove,canFlip, sword,attack, jump, doublejump, jumpPress, isFlip, falling, wallGrab, wallJumped, wallSlide, isDashing,isPause;
 	private bool groundTouch;
 	private bool hasDashed;
 	[Space]
@@ -37,7 +39,7 @@ public class Player_Movement : MonoBehaviour
 	public ParticleSystem slideParticle;
 	TextMeshProUGUI tm, currentItemAmountText;
 	public GameObject itemTxtMeshPro;
-
+	Damager damager;
 	public GameObject inventoryObj;
 	Inventory inventory;
 
@@ -50,61 +52,25 @@ public class Player_Movement : MonoBehaviour
 
 	public void Heal(float hp) => PlayerHealth.HealPlayer(hp);
 
-	void SetMoveInputs()
-    {
-
-    }
-
-	void SetItem(ItemInterface item)
-    {
-		if (item.isConsumable())
-        {
-			currentItemAmountText.gameObject.SetActive(true);
-			item.UseHandlerAddListener(() => { currentItemAmountText.SetText((item.itemAmount).ToString()); });
-		}
-		if(item.getType() == ItemCategories.ItensTypes.healthPotion)
-        {
-			input.Player.UseItem.performed += a => {
-				item.UseItem(() =>
-				{
-					if (PlayerHealth.currentHealth < PlayerHealth.maxHealth) return true;
-					else return false;
-				});
-			};
-		}
-
-	}
 
 	void Awake()
 	{
+		
 		input = new Inputs();
 		tm = GetComponentInChildren<TextMeshProUGUI>();
 		PlayerHealth = GetComponent<PlayerHealth>();
 		inventoryObj = Instantiate(inventoryObj);
+		anim = GetComponent<Animator>();
+		coll = GetComponent<Collision>();
+		damager = GetComponent<Damager>();
+		rb = GetComponent<Rigidbody2D>();		
+		inventory = inventoryObj.GetComponent<Inventory>();
+
 	}
 
-	private void OnEnable()
-	{
-		input.Enable();
-	}
-
-	private void OnDisable()
-	{
-		input.Disable();
-	}
-
-	// Start is called before the first frame update
 	void Start()
 	{
-        //	text.text = Hp.ToString();
-
-        #region Gets
-        anim = GetComponent<Animator>();		
-		coll = GetComponent<Collision>();
-		rb = GetComponent<Rigidbody2D>();
 		sword = false;
-		inventory = inventoryObj.GetComponent<Inventory>();
-		#endregion
 
 		#region set texts and events
 
@@ -127,8 +93,13 @@ public class Player_Movement : MonoBehaviour
 				else return false;
 			});
 		};
+
 		input.Player.Jump.performed += ctx => jump = true;
 		input.Player.Jump.canceled += ctx => jump = false;
+	 	//atack 
+	///	input.Player.attack.triggered += ctx => attack = true;
+	 //	input.Player.attack.started += ctx => attack = true;
+		
 		input.Player.Inventory.performed += x => { inventory.GetComponent<Inventory>().OpenCloseInventory(); };
 		
         #endregion
@@ -138,28 +109,24 @@ public class Player_Movement : MonoBehaviour
 	{
 		if (!isPause)
 		{
-			Vector2 dir = new Vector2(x, y);
+			
+			
+			dir = new Vector2(x, y);
 
 			Walk(dir);
 			tm.SetText(PlayerHealth.currentHealth.ToString());
 
-
 			if (falling && !doublejump)
 			{
-				//rb.velocity = Vector2.zero;
 				rb.gravityScale = 6;
-				//	rb.velocity = Vector2.zero;
-				//			Walk(dir);
 				if (jump && !coll.onGround && !coll.onWall)
 				{
 					Jump(Vector2.up, false);
 					doublejump = true;
 				}
-
-				//Jump(Vector2.down, false);
 			}
-			else rb.gravityScale = 5;
 
+			else rb.gravityScale = 5;
 
 			if (sword)
 			{
@@ -172,6 +139,11 @@ public class Player_Movement : MonoBehaviour
 				anim.SetLayerWeight(0, 1);
 				anim.SetLayerWeight(1, 0);
 			}
+
+
+			damager.playerIsAttacking = attack;
+			anim.SetBool("attack",attack);
+			
 		}
 	}
 
@@ -183,14 +155,7 @@ public class Player_Movement : MonoBehaviour
 		else Time.timeScale = 1;
 		if (!isPause)
 		{
-			
-			anim.SetFloat("Horizontal", x);
-			if (x == 0) anim.SetInteger("Horizontal2", 0); 
-			else anim.SetInteger("Horizontal2", 1);
-			anim.SetBool("onGround", coll.onGround);
-			anim.SetBool("onWall", coll.onWall);
-			anim.SetBool("jump", jump);
-			anim.SetBool("falling", falling);
+
 
 
 			if (coll.onGround || coll.onWall) falling = false;
@@ -250,20 +215,6 @@ public class Player_Movement : MonoBehaviour
 			}
 
 
-
-			if (coll.onGround && !groundTouch)
-			{
-				GroundTouch();
-				groundTouch = true;
-			}
-
-			if (!coll.onGround && groundTouch)
-			{
-				groundTouch = false;
-			}
-
-			WallParticle(y);
-
 			if (wallGrab || wallSlide || !canMove)
 				return;
 
@@ -282,12 +233,12 @@ public class Player_Movement : MonoBehaviour
 			if (!coll.onWall)
 			{
 
-				if (x > 0 && side == -1)
+				if (x > 0 && side == -1 && canFlip)
 				{
 					side = 1;
 					Flip();
 				}
-				if (x < 0 && side == 1)
+				if (x < 0 && side == 1 && canFlip)
 				{
 					side = -1;
 					Flip();
@@ -299,35 +250,51 @@ public class Player_Movement : MonoBehaviour
 
 				doublejump = false;
 			}
+
+			
+
 		}
 	}
 
-	void GroundTouch()
-	{
-		hasDashed = false;
-		isDashing = false;
 
-		
 
-		jumpParticle.Play();
+	void SetItem(ItemInterface item)
+    {
+		if (item.isConsumable())
+        {
+			currentItemAmountText.gameObject.SetActive(true);
+			item.UseHandlerAddListener(() => { currentItemAmountText.SetText((item.itemAmount).ToString()); });
+		}
+		if(item.getType() == ItemCategories.ItensTypes.healthPotion)
+        {
+			input.Player.UseItem.performed += a => {
+				item.UseItem(() =>
+				{
+					if (PlayerHealth.currentHealth < PlayerHealth.maxHealth) return true;
+					else return false;
+				});
+			};
+		}
+
 	}
 
+	private void OnEnable()
+	{
+		input.Enable();
+	}
 
+	private void OnDisable()
+	{
+		input.Disable();
+	}
 
 
 	private void WallJump()
 	{
-		
-
-		
-
 		StopCoroutine(DisableMovement(0));
 		StartCoroutine(DisableMovement(.1f));
-
 		Vector2 wallDir = coll.onRightWall ? Vector2.left : Vector2.right;
-
 		Jump((Vector2.up / a + wallDir / b), true);
-
 		wallJumped = true;
 	}
 
@@ -335,7 +302,6 @@ public class Player_Movement : MonoBehaviour
 	{
 		if (coll.wallSide != side )
 			//Flip();
-
 		if (!canMove)
 			return;
 
@@ -415,20 +381,22 @@ public class Player_Movement : MonoBehaviour
 	public void SetMov(InputAction.CallbackContext ctx)
 	{
 		x = ctx.ReadValue<float>();
-	}	
+		
+	}
 
-	public void SetSword()
+	private void OnTriggerEnter2D(Collider2D other)
 	{
-		sword = !sword;
+		Damageable damageable = other.GetComponent<Damageable>();
+		if (damageable != null)
+		{
+
+			if (attack) damager.DoDamage(damageable);
+			//if (player && ) 
+		}
 	}
 
-	public void SetPause() => isPause= !isPause;
+	protected void SetSword() => sword = !sword;
+	protected void SetPause() => isPause= !isPause;
+	protected void Flip() => transform.localScale = new Vector2(transform.localScale.x * -1, transform.localScale.y);
 	
-
-	
-
-	public void Flip()
-    {
-		transform.localScale = new Vector2(transform.localScale.x * -1, transform.localScale.y);
-	}
 }

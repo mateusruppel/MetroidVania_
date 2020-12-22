@@ -14,9 +14,8 @@ public class PlayerHealth : Damageable
 
 	public override void Death()
 	{
-
+		Destroy(gameObject);
 		Debug.Log("morreu");
-
 	}
 
 		public void SetInvencible(bool state)

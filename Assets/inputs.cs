@@ -57,6 +57,14 @@ public class @Inputs : IInputActionCollection, IDisposable
                     ""expectedControlType"": ""Button"",
                     ""processors"": """",
                     ""interactions"": """"
+                },
+                {
+                    ""name"": ""attack"",
+                    ""type"": ""Button"",
+                    ""id"": ""c58bde6d-8971-4d4b-8727-1c143811b208"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": ""Press""
                 }
             ],
             ""bindings"": [
@@ -224,6 +232,17 @@ public class @Inputs : IInputActionCollection, IDisposable
                     ""action"": ""Inventory"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""3a847d40-041f-4306-94b1-b1fe014cfb4e"",
+                    ""path"": ""<Keyboard>/x"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""attack"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -237,6 +256,7 @@ public class @Inputs : IInputActionCollection, IDisposable
         m_Player_espada = m_Player.FindAction("espada", throwIfNotFound: true);
         m_Player_UseItem = m_Player.FindAction("UseItem", throwIfNotFound: true);
         m_Player_Inventory = m_Player.FindAction("Inventory", throwIfNotFound: true);
+        m_Player_attack = m_Player.FindAction("attack", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -291,6 +311,7 @@ public class @Inputs : IInputActionCollection, IDisposable
     private readonly InputAction m_Player_espada;
     private readonly InputAction m_Player_UseItem;
     private readonly InputAction m_Player_Inventory;
+    private readonly InputAction m_Player_attack;
     public struct PlayerActions
     {
         private @Inputs m_Wrapper;
@@ -300,6 +321,7 @@ public class @Inputs : IInputActionCollection, IDisposable
         public InputAction @espada => m_Wrapper.m_Player_espada;
         public InputAction @UseItem => m_Wrapper.m_Player_UseItem;
         public InputAction @Inventory => m_Wrapper.m_Player_Inventory;
+        public InputAction @attack => m_Wrapper.m_Player_attack;
         public InputActionMap Get() { return m_Wrapper.m_Player; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -324,6 +346,9 @@ public class @Inputs : IInputActionCollection, IDisposable
                 @Inventory.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnInventory;
                 @Inventory.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnInventory;
                 @Inventory.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnInventory;
+                @attack.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnAttack;
+                @attack.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnAttack;
+                @attack.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnAttack;
             }
             m_Wrapper.m_PlayerActionsCallbackInterface = instance;
             if (instance != null)
@@ -343,6 +368,9 @@ public class @Inputs : IInputActionCollection, IDisposable
                 @Inventory.started += instance.OnInventory;
                 @Inventory.performed += instance.OnInventory;
                 @Inventory.canceled += instance.OnInventory;
+                @attack.started += instance.OnAttack;
+                @attack.performed += instance.OnAttack;
+                @attack.canceled += instance.OnAttack;
             }
         }
     }
@@ -354,5 +382,6 @@ public class @Inputs : IInputActionCollection, IDisposable
         void OnEspada(InputAction.CallbackContext context);
         void OnUseItem(InputAction.CallbackContext context);
         void OnInventory(InputAction.CallbackContext context);
+        void OnAttack(InputAction.CallbackContext context);
     }
 }
